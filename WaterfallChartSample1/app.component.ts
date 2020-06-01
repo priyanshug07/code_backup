@@ -1,19 +1,85 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import * as Highcharts from 'highcharts';
 declare var require: any;
 require('highcharts/highcharts-more')(Highcharts);
-require('highcharts/modules/solid-gauge')(Highcharts);
-require('highcharts/modules/heatmap')(Highcharts);
-require('highcharts/modules/treemap')(Highcharts);
-require('highcharts/modules/funnel')(Highcharts);
-let chartHolder;
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent {
+
+export class AppComponent implements OnInit {
+
+  ngOnInit() {
+  }
+
+    title: string = "Waterfall-chart";
+
+
+    getColor(prevData:number, nextData:number):string {
+      if (nextData - prevData > 0){
+        return "green"
+      }else if (nextData - prevData < 0){
+        return "red"
+      }else{
+        return "#aaa"
+      }
+    }
+
+    getData(prevData : any, nextData: any):any {
+      var totalPrevData = 0;
+      var totalNextData = 0;
+      var data = new Array()
+      for (let key in nextData){
+        if (key in prevData){
+          totalPrevData += prevData[key]
+          totalNextData += nextData[key]
+          data.push({
+            name : key,
+            y : nextData[key] - prevData[key],
+            color : this.getColor(prevData[key], nextData[key])
+          })
+        }else{
+          totalNextData += nextData[key]
+          data.push({
+            name : key,
+            y: nextData[key],
+            color : this.getColor(0, nextData[key])
+          })
+        }
+      }
+      data.unshift({
+        name : 2019,
+        y : totalPrevData,
+        color : '#aaa'
+      })
+      data.push({
+        name : 2020,
+        y : totalNextData,
+        isSum : true,
+        color : '#aaa'
+      })
+      console.log(data)
+      return data
+    }
+    
+    year2019_dict = {
+      'cash' : 100,
+      'Derivatives' : 300,
+      'PB' : 200,
+      'AWM' : 100
+    }
+
+    year2020_dict = {
+      'cash' : 200,
+      'Derivatives' : 300,
+      'PB' : 100,
+      'AWM' : 300
+    }    
+
+    // Higcharts configuration
+    
     highcharts = Highcharts;
     chartConfig = {
       credits: {
@@ -23,7 +89,7 @@ export class AppComponent {
         type: 'waterfall'
       },
       title: {
-        text: 'Customer Migration'
+        text: 'Data Visualization'
       },
       xAxis: {
         type: 'category'
@@ -37,53 +103,20 @@ export class AppComponent {
         enabled: false
       },
       tooltip: {
-        enabled: false,
-      },
+        pointFormat: '<b>{point.y:,.0f}</b>'
+    },
       series: [{
         color: '#aaa',
 
         upColor: 'green',
 
-        data: [
-          {
-            name: '2015',
-            y: 86336,
-            color: '#aaa'
-          }, 
-          {
-            name: 'Churn',
-            y: -12816,
-            color: 'red'
-          }, 
-          {
-            name: 'Downgrade',
-            y: -29052,
-            color: 'red'
-          }, 
-          {
-            name: 'Continous PRIMARY',
-            isIntermediateSum: true,
-            color: '#aaa'
-          }, 
-          {
-            name: 'Upgrade',
-            y: 35981
-          }, 
-          {
-            name: 'New',
-            y: 20681
-          }, 
-          {
-            name: '2016',
-            isSum: true,
-            color: '#aaa'
-          }
-        ],
+        data: this.getData(this.year2019_dict, this.year2020_dict),
+
 
         dataLabels: {
           enabled: true,
           formatter: function () {
-            return Highcharts.numberFormat(this.y / 1000, 0, ',') + 'k';
+            return Highcharts.numberFormat(this.y , 0);
           }
         }
       }]
